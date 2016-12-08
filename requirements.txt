@@ -1,2 +1,2 @@
-
-# Additional requirements go here
+elasticsearch==5.0.1
+django>=1.8.0
