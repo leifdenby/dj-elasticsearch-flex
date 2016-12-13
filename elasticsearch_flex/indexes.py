@@ -44,7 +44,7 @@ class IndexedModel(DocType):
     def object(self):
         return self.get_object()
 
-    def _prepare(self):
+    def prepare(self):
         obj = self.get_object()
         for field in self._fields:
             try:
@@ -55,7 +55,6 @@ class IndexedModel(DocType):
                 setattr(self, field, val_from_obj_attr)
 
     @classmethod
-    def prepare(cls, pk):
+    def init_using_pk(cls, pk):
         obj = cls(_id=pk)
-        obj._prepare()
         return obj
