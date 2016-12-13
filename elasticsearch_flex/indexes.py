@@ -1,10 +1,15 @@
+from collections import namedtuple
 from six import add_metaclass
 from six.moves import filter
 
 from elasticsearch_dsl.document import DocType, DocTypeMeta
-from elasticsearch_dsl.field import Field
+
+from .fields import FlexField
+from .utils import rgetattr
 
 _MODEL_INDEX_MAPPING = {}
+
+FieldAttrMap = namedtuple('FieldAttrMap', ('name', 'attr'))
 
 
 class IndexableMeta(type):
@@ -15,8 +20,9 @@ class IndexableMeta(type):
         # to facilitate differentiating field attribute from non-field attribute
         # later.
         for k, x in namespace.items():
-            if isinstance(x, Field):
-                fields.append(k)
+            if isinstance(x, FlexField):
+                f = x._model_attr if x._model_attr is not None else k
+                fields.append(FieldAttrMap(k, f))
         # Append field-name information from all the Base classes.
         ix_predicate = lambda x: issubclass(x, DocType) and hasattr(x, '_fields')
         for base_index in filter(ix_predicate, bases):
@@ -61,11 +67,11 @@ class IndexedModel(DocType):
         obj = self.get_object()
         for field in self._fields:
             try:
-                prep_method = getattr(self, 'prepare_{0}'.format(field))
-                setattr(self, field, prep_method(obj))
+                prep_method = getattr(self, 'prepare_{0}'.format(field.attr))
+                setattr(self, field.name, prep_method(obj))
             except AttributeError:
-                val_from_obj_attr = getattr(obj, field)
-                setattr(self, field, val_from_obj_attr)
+                val_from_obj_attr = rgetattr(obj, field.attr)
+                setattr(self, field.name, val_from_obj_attr)
 
     @classmethod
     def init_using_pk(cls, pk):
@@ -88,4 +94,12 @@ def get_model_for_index(index):
         raise KeyError('Index {0} has no associated model'.format(index))
 
 
-__all__ = ('IndexedModel', 'get_index_for_model', 'get_model_for_index')
+def registered_indices():
+    return _MODEL_INDEX_MAPPING.values()
+
+__all__ = (
+    'IndexedModel',
+    'get_index_for_model',
+    'get_model_for_index',
+    'registered_indices',
+)
