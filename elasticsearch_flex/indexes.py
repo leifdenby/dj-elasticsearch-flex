@@ -1,6 +1,10 @@
 from six import add_metaclass
+from six.moves import filter
+
 from elasticsearch_dsl import DocType
 from elasticsearch_dsl.field import Field
+
+_MODEL_INDEX_MAPPING = {}
 
 
 class Indexable(type):
@@ -21,7 +25,11 @@ class Indexable(type):
 
         # TODO: Assert sanity of extension class
         # -- Implement checking get_queryset and get_model implementations.
-        return super(Indexable, cls).__new__(cls, name, bases, namespace)
+        klass = super(Indexable, cls).__new__(cls, name, bases, namespace)
+        # Register this doctype in indexed models mapping.
+        if 'model' in namespace:
+            _MODEL_INDEX_MAPPING[namespace['model']] = klass
+        return klass
 
 
 @add_metaclass(Indexable)
