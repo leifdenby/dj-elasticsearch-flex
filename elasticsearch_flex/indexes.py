@@ -1,13 +1,13 @@
 from six import add_metaclass
 from six.moves import filter
 
-from elasticsearch_dsl import DocType
+from elasticsearch_dsl.document import DocType, DocTypeMeta
 from elasticsearch_dsl.field import Field
 
 _MODEL_INDEX_MAPPING = {}
 
 
-class Indexable(type):
+class IndexableMeta(type):
     '''Defines an introspection type for Indexable Models.'''
     def __new__(cls, name, bases, namespace):
         fields = []
@@ -18,21 +18,26 @@ class Indexable(type):
             if isinstance(x, Field):
                 fields.append(k)
         # Append field-name information from all the Base classes.
-        for base_index in filter(lambda x: issubclass(x, IndexedModel), bases):
+        ix_predicate = lambda x: issubclass(x, DocType) and hasattr(x, '_fields')
+        for base_index in filter(ix_predicate, bases):
             fields.extend(base_index._fields)
         # Insert fields into this class's namespace.
         namespace['_fields'] = fields
 
         # TODO: Assert sanity of extension class
         # -- Implement checking get_queryset and get_model implementations.
-        klass = super(Indexable, cls).__new__(cls, name, bases, namespace)
+        klass = super(IndexableMeta, cls).__new__(cls, name, bases, namespace)
         # Register this doctype in indexed models mapping.
         if 'model' in namespace:
             _MODEL_INDEX_MAPPING[namespace['model']] = klass
         return klass
 
 
-@add_metaclass(Indexable)
+class IndexableDocTypeMeta(IndexableMeta, DocTypeMeta):
+    pass
+
+
+@add_metaclass(IndexableDocTypeMeta)
 class IndexedModel(DocType):
     '''Base class for declaring Index for a Model.
 
