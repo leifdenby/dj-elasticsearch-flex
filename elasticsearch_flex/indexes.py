@@ -66,3 +66,21 @@ class IndexedModel(DocType):
     def init_using_pk(cls, pk):
         obj = cls(_id=pk)
         return obj
+
+
+def get_index_for_model(model):
+    try:
+        return _MODEL_INDEX_MAPPING[model]
+    except KeyError:
+        raise KeyError('Model {0} has no associated index'.format(model))
+
+
+def get_model_for_index(index):
+    try:
+        rev_map = (m for m, i in _MODEL_INDEX_MAPPING.items() if i is index)
+        return next(rev_map, None)
+    except StopIteration:
+        raise KeyError('Index {0} has no associated model'.format(index))
+
+
+__all__ = ('IndexedModel', 'get_index_for_model', 'get_model_for_index')
