@@ -1,8 +1,11 @@
 import json
+import logging
 import re
 import os
 
 from six import text_type
+
+logger = logging.getLogger(__name__)
 
 
 class SearchTemplate(object):
@@ -11,7 +14,8 @@ class SearchTemplate(object):
         self.template = self._prerender(filepath)
 
     def register(self):
-        pass
+        # TODO
+        logger.info('Registering template <%s>', self._index)
 
     def unregister(self):
         pass

@@ -1,3 +1,6 @@
+import os
+import inspect
+
 from collections import namedtuple
 from six import add_metaclass
 from six.moves import filter
@@ -6,6 +9,7 @@ from elasticsearch_dsl.document import DocType, DocTypeMeta
 
 from .fields import FlexField
 from .utils import rgetattr
+from .search_templates import SearchTemplate
 
 _MODEL_INDEX_MAPPING = {}
 
@@ -29,6 +33,10 @@ class IndexableMeta(type):
             fields.extend(base_index._fields)
         # Insert fields into this class's namespace.
         namespace['_fields'] = fields
+
+        # Make a reference of Meta in the object namespace (would not be GCd)
+        if 'Meta' in namespace:
+            namespace['_meta'] = namespace['Meta']
 
         # TODO: Assert sanity of extension class
         # -- Implement checking get_queryset and get_model implementations.
@@ -77,6 +85,22 @@ class IndexedModel(DocType):
     def init_using_pk(cls, pk):
         obj = cls(_id=pk)
         return obj
+
+    @classmethod
+    def init(cls, index=None, using=None):
+        ix_name = cls._doc_type.index
+        module_dir = os.path.dirname(inspect.getabsfile(cls))
+        tpl_dir = os.path.join(module_dir, 'search_templates')
+
+        # Init mapping
+        cls._doc_type.init(index, using)
+
+        # Discover and register the Templates
+        if hasattr(cls, '_meta'):
+            for tpl in getattr(cls._meta, 'query_templates', []):
+                template_file = os.path.join(tpl_dir, '{}.json'.format(tpl))
+                template = SearchTemplate(ix_name, template_file)
+                template.register()
 
 
 def get_index_for_model(model):
