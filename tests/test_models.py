@@ -10,7 +10,7 @@ Tests for `dj-elasticsearch-flex` models module.
 
 from django.test import TestCase
 
-from elasticsearch_flex import models
+# from elasticsearch_flex import models
 
 
 class TestElasticsearch_flex(TestCase):

@@ -1,13 +1,14 @@
 import json
 import re
+import os
 
-from six import string_types
+from six import text_type
 
 
 class SearchTemplate(object):
     def __init__(self, index, filepath):
         self._index = index
-        self._prerender(filepath)
+        self.template = self._prerender(filepath)
 
     def register(self):
         pass
@@ -19,6 +20,8 @@ class SearchTemplate(object):
         pass
 
     def _prerender(self, filepath):
+        file_abspath = os.path.abspath(filepath)
+        file_dir = os.path.dirname(file_abspath)
         with open(filepath, 'r') as fp:
             content = json.load(fp)
 
@@ -28,14 +31,15 @@ class SearchTemplate(object):
                 return {k: interpolate(v) for k, v in dat.items()}
             elif type(dat) is list:
                 return [interpolate(x) for x in dat]
-            elif type(dat) is string_types:
+            elif type(dat) is text_type:
                 # Do interpolation
-                matches = re.match(r'#\[(<scriptname>.+)\]', dat)
+                matches = re.match(r'#\[(.+)\]', dat)
                 if matches is not None:
-                    script_name = matches.group('scriptname')
-                    script_file = 'search_templates/{}.java'.format(script_name)
+                    script_name = matches.group(1)
+                    script_file = os.path.join(file_dir, '{}.java'.format(script_name))
                     with open(script_file, 'r') as fp:
-                        return fp.read()
+                        script = fp.read()
+                        return re.sub(r'^[ \t]+|\s+$', ' ', script, flags=re.M)
             return dat
 
         prerendered = interpolate(content)
