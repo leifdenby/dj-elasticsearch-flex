@@ -5,15 +5,6 @@ language: python
 python:
   - "3.5"
 
-env:
-  - TOX_ENV=py35-django-110
-  - TOX_ENV=py35-django-18
-  - TOX_ENV=py27-django-110
-  - TOX_ENV=py27-django-18
-
-matrix:
-  fast_finish: true
-
 install: pip install -r requirements_dev.txt
 
 script: python runtests.py

@@ -32,13 +32,20 @@ class SearchTemplate(object):
             elif type(dat) is list:
                 return [interpolate(x) for x in dat]
             elif type(dat) is text_type:
-                # Do interpolation
                 matches = re.match(r'#\[(.+)\]', dat)
                 if matches is not None:
                     script_name = matches.group(1)
                     script_file = os.path.join(file_dir, '{}.java'.format(script_name))
                     with open(script_file, 'r') as fp:
                         script = fp.read()
+                        # XXX: Very cheap Java code "minification".
+                        # It looks for spaces and tab marks in the beginning
+                        # and end of the string, and replaces them with a single
+                        # space.
+                        # This is not robust and will fail for multi-line
+                        # strings which want to preserve the spaces, however
+                        # in our use case, we probably won't need that.
+                        # In any case, this can use a rewrite.
                         return re.sub(r'^[ \t]+|\s+$', ' ', script, flags=re.M)
             return dat
 
