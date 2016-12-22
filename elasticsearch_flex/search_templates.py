@@ -2,26 +2,32 @@ import json
 import logging
 import re
 import os
+import elasticsearch
+import six
 
-from six import text_type
+from . import connections
 
 logger = logging.getLogger(__name__)
 
 
+@six.python_2_unicode_compatible
 class SearchTemplate(object):
-    def __init__(self, index, filepath):
-        self._index = index
+    def __init__(self, name, filepath):
+        self.name = name
         self.template = self._prerender(filepath)
 
     def register(self):
-        # TODO
-        logger.info('Registering template <%s>', self._index)
+        c = connections.get_connection()
+        try:
+            c.put_template(self.name, self.template)
+            logger.info('Registered template %s', self)
+        except elasticsearch.TransportError:
+            logger.exception('Error while attempting to PUT template <%s>', self.name)
+            raise
 
     def unregister(self):
-        pass
-
-    def sync(self):
-        pass
+        c = connections.get_connection()
+        c.delete_template(self.name)
 
     def _prerender(self, filepath):
         file_abspath = os.path.abspath(filepath)
@@ -35,7 +41,7 @@ class SearchTemplate(object):
                 return {k: interpolate(v) for k, v in dat.items()}
             elif type(dat) is list:
                 return [interpolate(x) for x in dat]
-            elif type(dat) is text_type:
+            elif type(dat) is six.text_type:
                 matches = re.match(r'#\[(.+)\]', dat)
                 if matches is not None:
                     script_name = matches.group(1)
@@ -54,4 +60,17 @@ class SearchTemplate(object):
             return dat
 
         prerendered = interpolate(content)
-        return json.dumps(prerendered)
+        body = json.dumps(prerendered)
+
+        # We need to fix the above (valid) json to cater for being a template
+        # Remove the quotes around the json props.
+        body = (body
+                .replace('"{{#toJson}}', "{{#toJson}}")
+                .replace('{{/toJson}}"', '{{/toJson}}'))
+        return json.dumps(dict(template=body))
+
+    def __repr__(self):
+        return '<{0} name={1}>'.format(self.__class__.__name__, self.name)
+
+    def __str__(self):
+        return repr(self)
