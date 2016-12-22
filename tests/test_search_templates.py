@@ -35,6 +35,9 @@ class TestSearchTemplate(fake_fs_unittest.TestCase, TestCase):
         tpl = SearchTemplate('foo', '/var/templates/uno.json')
         assert type(tpl.template) is six.text_type
         render = json.loads(tpl.template)
-        assert render['foo'] == 'bar'
-        assert render['fop'] == ['baz', 'bat']
-        assert render['baz']['bar'] == "String answer = \"42\";\n for(key <String>: params) {\n if (key == answer) {\n return true;\n }\n } "
+        assert 'template' in render
+        template = render['template']
+
+        # Since we can't actually decode the template as json, we only
+        # verify if the content of script were interpolated.
+        assert "for(key <String>: params)" in template
