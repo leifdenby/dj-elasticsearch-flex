@@ -1,3 +1,4 @@
 -r ./requirements_dev.txt
 
 django
+pyfakefs
