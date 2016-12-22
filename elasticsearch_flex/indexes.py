@@ -1,8 +1,8 @@
 import os
 import inspect
+import six
 
 from collections import namedtuple
-from six import add_metaclass
 from six.moves import filter
 
 from elasticsearch_dsl.document import DocType, DocTypeMeta
@@ -51,7 +51,8 @@ class IndexableDocTypeMeta(IndexableMeta, DocTypeMeta):
     pass
 
 
-@add_metaclass(IndexableDocTypeMeta)
+@six.python_2_unicode_compatible
+@six.add_metaclass(IndexableDocTypeMeta)
 class IndexedModel(DocType):
     '''Base class for declaring Index for a Model.
 
@@ -98,9 +99,16 @@ class IndexedModel(DocType):
         # Discover and register the Templates
         if hasattr(cls, '_meta'):
             for tpl in getattr(cls._meta, 'query_templates', []):
+                identifier = '.'.join([ix_name, tpl])
                 template_file = os.path.join(tpl_dir, '{}.json'.format(tpl))
-                template = SearchTemplate(ix_name, template_file)
+                template = SearchTemplate(identifier, template_file)
                 template.register()
+
+    def __repr__(self):
+        return '<{0} index={1}>'.format(self.__class__.__name__, self._index)
+
+    def __str__(self):
+        return repr(self)
 
 
 def get_index_for_model(model):
