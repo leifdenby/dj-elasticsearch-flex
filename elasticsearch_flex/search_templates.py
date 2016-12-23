@@ -1,8 +1,8 @@
+import elasticsearch
 import json
 import logging
-import re
 import os
-import elasticsearch
+import re
 import six
 
 from . import connections
@@ -12,6 +12,21 @@ logger = logging.getLogger(__name__)
 
 @six.python_2_unicode_compatible
 class SearchTemplate(object):
+    '''Partial Search Templates
+
+    Wrapper for lower level Search Templates stored as mustache templates in
+    elasticsearch cluster.
+
+    A template is a `json` file containing the elasticsearch query with
+    placeholders for parameters passed during the queries. It is possible to
+    also optionally specify a `script` file name, which is inlined before
+    it is registered in elasticsearch.
+
+    To specify the `script`, use the following substitution:
+
+            "field": "#[filename]",
+    '''
+
     def __init__(self, name, filepath):
         self.name = name
         self.template = self._prerender(filepath)
