@@ -30,6 +30,14 @@ class TemplateQuerySet(object):
         ix_name = self.index._doc_type.index
         doc_type = self.index._doc_type.name
 
-        res = c.search_template(index=ix_name, doc_type=doc_type, body=payload)
+        return c.search_template(index=ix_name, doc_type=doc_type, body=payload)
 
-        # TODO -- load objects from model.
+    def _load_objects(self, results):
+        hits = results['hits']['hits']
+        if len(hits) == 0:
+            return
+
+        # TODO -- maybe keep the raw scores?
+        ids = [hit['_id'] for hit in hits]
+        qs = self.index().get_queryset()
+        return qs.in_bulk(ids)
