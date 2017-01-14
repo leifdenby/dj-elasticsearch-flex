@@ -9,6 +9,7 @@ from elasticsearch_dsl.document import DocType, DocTypeMeta
 
 from .fields import FlexField
 from .utils import rgetattr
+from .query import DocQuerySet
 from .search_templates import SearchTemplate
 
 _MODEL_INDEX_MAPPING = {}
@@ -109,6 +110,10 @@ class IndexedModel(DocType):
 
     def __str__(self):
         return repr(self)
+
+    @classmethod
+    def docs(cls, **kwargs):
+        return DocQuerySet(cls, **kwargs)
 
 
 def get_index_for_model(model):
