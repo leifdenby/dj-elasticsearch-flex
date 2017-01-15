@@ -3,6 +3,7 @@ import hues
 
 from django.core.management.base import BaseCommand
 
+from elasticsearch import exceptions
 from elasticsearch_dsl.connections import connections
 from elasticsearch_flex.indexes import registered_indices
 
@@ -22,7 +23,10 @@ class Command(BaseCommand):
             hues.info('==> Initializing', index.__name__)
 
             index_name = index._doc_type.index
-            connection.indices.close(index_name)
+            try:
+                connection.indices.close(index_name)
+            except exceptions.NotFoundError:
+                pass
             index.init()
             connection.indices.open(index_name)
 
