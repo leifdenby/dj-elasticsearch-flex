@@ -9,7 +9,9 @@ logger = logging.getLogger('elasticsearch_flex')
 
 default_app_config = 'elasticsearch_flex.apps.ElasticsearchFlexConfig'
 
-if hasattr(settings, 'ElasticsearchFlex'):
-    'host' in settings.ElasticsearchFlex
+flexconfig = dict()
+
+if hasattr(settings, 'ELASTICSEARCH_FLEX'):
+    flexconfig.update(settings.ELASTICSEARCH_FLEX)
 
 __all__ = ('connections',)
