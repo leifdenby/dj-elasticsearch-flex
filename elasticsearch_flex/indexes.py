@@ -9,7 +9,7 @@ from elasticsearch_dsl.document import DocType, DocTypeMeta
 
 from .fields import FlexField
 from .utils import rgetattr
-from .query import DocQuerySet
+from .query import DocAccessors
 from .search_templates import SearchTemplate
 
 _MODEL_INDEX_MAPPING = {}
@@ -45,6 +45,7 @@ class IndexableMeta(type):
         # Register this doctype in indexed models mapping.
         if 'model' in namespace:
             _MODEL_INDEX_MAPPING[namespace['model']] = klass
+        klass.docs = DocAccessors(klass)
         return klass
 
 
@@ -110,10 +111,6 @@ class IndexedModel(DocType):
 
     def __str__(self):
         return repr(self)
-
-    @classmethod
-    def docs(cls, **kwargs):
-        return DocQuerySet(cls, **kwargs)
 
 
 def get_index_for_model(model):
