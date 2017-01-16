@@ -3,7 +3,7 @@ import logging
 from django.conf import settings
 from elasticsearch_dsl.connections import connections
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 logger = logging.getLogger('elasticsearch_flex')
 
