@@ -4,12 +4,8 @@ This search queryset wraps the low level elasticsearch queries, and acts as
 a transparent interface between elasticsearch documents and corresponding
 django model objects.
 '''
-import elasticsearch_dsl
-
 from collections import namedtuple
 from elasticsearch_dsl.search import Search
-from elasticsearch_dsl import response
-from elasticsearch_dsl.utils import AttrList, AttrDict
 
 from . import connections
 
@@ -23,13 +19,13 @@ def from_queryset(hits, qs):
 
 
 class ModelSearch(Search):
-    @property
-    def objects(self):
+    def objects(self, qs=None):
         docs = list(self)
         if len(docs):
-            # Use one document for introspection
-            doczero = docs[0]
-            qs = doczero.get_queryset()
+            if qs is None:
+                # Use one document for introspection.
+                # This resolves the default queryset defined with index.
+                qs = docs[0].get_queryset()
             _, objects = from_queryset(docs, qs)
             return objects
         return []
