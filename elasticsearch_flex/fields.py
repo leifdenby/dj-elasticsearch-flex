@@ -6,6 +6,7 @@ __base_fields = (
     'Float', 'Double', 'Byte', 'Short', 'Integer', 'Long', 'Boolean',
     'Ip', 'Attachment',
     'GeoPoint', 'GeoShape',
+    'Completion',
 )
 
 
