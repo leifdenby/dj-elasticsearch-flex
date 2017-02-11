@@ -11,7 +11,16 @@ from elasticsearch_flex.indexes import registered_indices
 class Command(BaseCommand):
     help = 'Sync search indices, templates, and scripts.'
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--delete',
+            action='store_true',
+            dest='delete',
+            default=False,
+            help='Delete existing index',
+        )
+
+    def handle(self, delete, *args, **options):
         indices = registered_indices()
         connection = connections.get_connection()
         hues.info('Using connection', connection)
@@ -25,6 +34,9 @@ class Command(BaseCommand):
             index_name = index._doc_type.index
             try:
                 connection.indices.close(index_name)
+                if delete:
+                    hues.warn('Deleting existing index.')
+                    connection.indices.delete(index_name)
             except exceptions.NotFoundError:
                 pass
             index.init()
