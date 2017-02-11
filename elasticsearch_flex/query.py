@@ -15,7 +15,7 @@ def from_queryset(hits, qs):
     objects = qs.in_bulk(ids)
     keytype = type(objects.keys()[0])
     pks = list(map(keytype, ids))
-    return pks, [objects[i] for i in pks]
+    return pks, [objects[i] for i in pks if i in objects]
 
 
 class ModelSearch(Search):
