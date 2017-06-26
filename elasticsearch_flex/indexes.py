@@ -3,10 +3,13 @@ import inspect
 import six
 
 from collections import namedtuple
+from contextlib import contextmanager
 from six.moves import filter
 
 from elasticsearch_dsl.document import DocType, DocTypeMeta
+from elasticsearch_dsl.connections import connections
 
+from .analysis_utils import AnalysisDefinition
 from .fields import FlexField
 from .utils import rgetattr
 from .query import DocAccessors
@@ -74,6 +77,10 @@ class IndexedModel(DocType):
     def object(self):
         return self.get_object()
 
+    @property
+    def index_name(self):
+        return self._doc_type.index
+
     def prepare(self):
         obj = self.get_object()
         for field in self._fields:
@@ -98,13 +105,38 @@ class IndexedModel(DocType):
         # Init mapping
         cls._doc_type.init(index, using)
 
-        # Discover and register the Templates
+        # Discover and register the Templates and Analyzers.
         if hasattr(cls, '_meta'):
+            # Use the instance for registering analyzers.
+            self = cls()
             for tpl in getattr(cls._meta, 'query_templates', []):
                 identifier = '.'.join([ix_name, tpl])
                 template_file = os.path.join(tpl_dir, '{}.json'.format(tpl))
                 template = SearchTemplate(identifier, template_file)
-                template.register()
+                template.register(self)
+
+            for analyzer in getattr(cls._meta, 'analyzers', []):
+                definition = AnalysisDefinition(analyzer)
+                definition.register(self)
+
+    @staticmethod
+    def get_connection():
+        return connections.get_connection()
+
+    def delete(self):
+        return self.get_connection().indices.delete(self.index_name)
+
+    def close(self):
+        return self.get_connection().indices.close(self.index_name)
+
+    def open(self):
+        return self.get_connection().indices.open(self.index_name)
+
+    @contextmanager
+    def ensure_closed_and_reopened(self):
+        self.close()
+        yield self
+        self.open()
 
     def __repr__(self):
         return '<{0} index={1}>'.format(self.__class__.__name__, self._index)
@@ -130,6 +162,7 @@ def get_model_for_index(index):
 
 def registered_indices():
     return _MODEL_INDEX_MAPPING.values()
+
 
 __all__ = (
     'IndexedModel',
