@@ -1,4 +1,5 @@
 import os
+import elasticsearch
 import inspect
 import six
 
@@ -127,10 +128,15 @@ class IndexedModel(DocType):
         return self.get_connection().indices.delete(self.index_name)
 
     def close(self):
-        return self.get_connection().indices.close(self.index_name)
+        try:
+            self.get_connection().indices.close(self.index_name)
+        except elasticsearch.exceptions.NotFoundError:
+            # We ignore the NotFoundError when a non-existent index is attempted
+            # to be closed. This is for convinience in context manager.
+            pass
 
     def open(self):
-        return self.get_connection().indices.open(self.index_name)
+        self.get_connection().indices.open(self.index_name)
 
     @contextmanager
     def ensure_closed_and_reopened(self):
