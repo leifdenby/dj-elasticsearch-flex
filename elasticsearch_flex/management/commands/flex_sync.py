@@ -3,7 +3,6 @@ import hues
 
 from django.core.management.base import BaseCommand
 
-from elasticsearch import exceptions
 from elasticsearch_dsl.connections import connections
 from elasticsearch_flex.indexes import registered_indices
 
@@ -31,15 +30,10 @@ class Command(BaseCommand):
         for i, index in enumerate(indices, 1):
             hues.info('==> Initializing', index.__name__)
 
-            index_name = index._doc_type.index
-            try:
-                connection.indices.close(index_name)
+            with index().ensure_closed_and_reopened() as ix:
                 if delete:
                     hues.warn('Deleting existing index.')
-                    connection.indices.delete(index_name)
-            except exceptions.NotFoundError:
-                pass
-            index.init()
-            connection.indices.open(index_name)
+                    ix.delete()
+                ix.init()
 
             hues.success('--> Done {0}/{1}'.format(i, len(indices)))
