@@ -5,8 +5,6 @@ import os
 import re
 import six
 
-from . import connections
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,8 +29,8 @@ class SearchTemplate(object):
         self.name = name
         self.template = self._prerender(filepath)
 
-    def register(self):
-        c = connections.get_connection()
+    def register(self, index):
+        c = index.get_connection()
         try:
             c.put_template(self.name, self.template)
             logger.info('Registered template %s', self)
@@ -40,8 +38,8 @@ class SearchTemplate(object):
             logger.exception('Error while attempting to PUT template <%s>', self.name)
             raise
 
-    def unregister(self):
-        c = connections.get_connection()
+    def unregister(self, index):
+        c = index.get_connection()
         c.delete_template(self.name)
 
     def _prerender(self, filepath):
