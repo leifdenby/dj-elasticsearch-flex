@@ -33,7 +33,7 @@ class Command(BaseCommand):
             with index().ensure_closed_and_reopened() as ix:
                 if delete:
                     hues.warn('Deleting existing index.')
-                    ix.delete()
+                    ix.delete_index()
                 ix.init()
 
             hues.success('--> Done {0}/{1}'.format(i, len(indices)))

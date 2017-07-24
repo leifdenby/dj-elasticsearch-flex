@@ -124,7 +124,7 @@ class IndexedModel(DocType):
     def get_connection():
         return connections.get_connection()
 
-    def delete(self):
+    def delete_index(self):
         return self.get_connection().indices.delete(self.index_name)
 
     def close(self):
