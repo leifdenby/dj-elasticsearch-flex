@@ -1,7 +1,7 @@
 from celery import shared_task
 
 
-@shared_task
+@shared_task(rate_limit='50/m')
 def update_indexed_document(index, created, pk):
     indexed_doc = index.init_using_pk(pk)
     indexed_doc.prepare()
