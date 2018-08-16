@@ -19,15 +19,19 @@ class ElasticsearchFlexConfig(AppConfig):
 
     def __init_connection(self):
         host = flexconfig.get('host')
+        verify_certs = flexconfig.get('verify_certs')
+
         if host is None:
-            connections.create_connection(hosts=['localhost'])
+            connections.create_connection(hosts=['localhost'],
+                                          verify_certs=verify_certs)
             logger.info('No Elasticsearch host specified, assuming "localhost"')
             return
 
         if isinstance(host, dict):
             connections.configure(**host)
         elif isinstance(host, six.string_types):
-            connections.create_connection(hosts=[host])
+            connections.create_connection(hosts=[host],
+                                          verify_certs=verify_certs)
         else:
             raise ImproperlyConfigured('<host = {0}> for ElasticsearchFlex is incorrect'.format(host))
 
